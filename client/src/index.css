@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tus estilos globales personalizados aquí */
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
+}
