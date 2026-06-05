@@ -1,102 +1,92 @@
 # Reutility 🌳
 
-**Plataforma municipal para la gestión colaborativa de espacios públicos**
+Plataforma municipal para la gestión colaborativa de espacios públicos.
 
-Reutility es una aplicación web y móvil (futuro) que conecta a ciudadanos con sus plazas urbanas, permitiendo calificar, comentar, reportar alertas y colaborar en el mantenimiento de los espacios públicos.
+---
 
-## 🚀 Demo actual (MVP)
-
-- **Frontend:** React + Tailwind CSS
-- **Backend:** Node.js + Express
-- **Base de datos:** PostgreSQL
-- **Estado:** 1 plaza piloto (Plaza de Armas, Santiago)
-
-## 📋 Funcionalidades implementadas
-
-- ✅ Visualización de plazas
-- ✅ Sistema de calificaciones (1-5 estrellas)
-- ✅ Comentarios ciudadanos
-- ✅ Cálculo automático de rating promedio
-- ✅ Arquitectura modular escalable
-
-## 🛠️ Tecnologías utilizadas
+## 🚀 Tecnologías
 
 | Capa | Tecnología |
 |------|------------|
-| Frontend | React 18, Vite, Tailwind CSS, React Router |
+| Frontend | React, Vite, Tailwind CSS, React Router, TanStack Query |
 | Backend | Node.js, Express |
-| Base de datos | PostgreSQL, pg (node-postgres) |
-| Estado | TanStack Query (React Query) |
-| Estilos | Tailwind CSS v3 |
+| Base de datos | PostgreSQL |
+| Autenticación | Google OAuth, JWT, bcrypt |
 
-## 📁 Estructura del proyecto
+---
+
+## 📋 Funcionalidades
+
+- Visualización y búsqueda de plazas
+- Calificaciones (1-5 estrellas)
+- Comentarios (crear, editar, eliminar)
+- Autenticación con Google o Email
+- Perfil de usuario
+- Notificaciones tipo toast
+
+---
+
+## 📁 Estructura
+
+```
 Reutility/
-├── client/ # Frontend React
-│ ├── src/
-│ │ ├── modules/ # Módulos por dominio
-│ │ │ └── plazas/ # Módulo de plazas
-│ │ ├── shared/ # Componentes compartidos
-│ │ └── services/ # Conexión a API
-│ └── package.json
-├── server/ # Backend Node.js
-│ ├── config/ # Configuración DB
-│ ├── index.js # Servidor Express
-│ └── package.json
-└── database/ # Scripts SQL (no incluido)
+├── client/          # React frontend
+├── server/          # Node.js backend
+└── database/        # Scripts SQL
+```
 
+---
 
-## 🔧 Instalación y ejecución local
+## 🔧 Instalación rápida
 
-### Requisitos previos
+```bash
+# Clonar
+git clone https://github.com/Sovalle93/Reutility.git
+cd Reutility
 
-- Node.js (v18 o superior)
-- PostgreSQL (v16)
-- Git
+# Backend
+cd server
+npm install
+cp .env.example .env  # Configurar variables
+npm run dev
 
+# Frontend (otra terminal)
+cd client
+npm install
+npm run dev
+```
 
-📊 Próximas funcionalidades (hoja de ruta)
+---
 
-    Autenticación de usuarios (Google + Email)
+## 🔐 Variables de entorno (backend)
 
-    Integración con ClaveÚnica (opcional)
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=tu_contraseña
+DB_NAME=reutility_dev
 
-    Sistema de roles (ciudadano, inspector, fiscalizador)
+JWT_SECRET=tu_clave_secreta
+GOOGLE_CLIENT_ID=tu_id
+GOOGLE_CLIENT_SECRET=tu_secreto
+```
 
-    Alertas ciudadanas (basura, mantenimiento, vandalismo)
+---
 
-    Fiscalizaciones municipales con actas
+## 📊 Estado del proyecto
 
-    Ranking de plazas por municipio
+MVP funcional. Próximas features: roles, alertas, geolocalización, app móvil.
 
-    App móvil con Expo (comparte código con web)
+---
 
-    Geolocalización en tiempo real
+## 👥 Autor
 
-    Subida de fotos y evidencias
+Santiago Ovalle
 
-    Notificaciones push
+---
 
-🏗️ Arquitectura
+## 📄 Licencia
 
-El proyecto está diseñado para escalar a una aplicación completa con:
-
-    Monorepo (futuro) para compartir código entre web y móvil
-
-    Multi-tenant por municipio
-
-    Roles y permisos granulares
-
-    Alta concurrencia con índices optimizados
-
-📝 Licencia
-
-Este proyecto es de código abierto.
-👥 Autores
-
-    Santiago Ovalle - Desarrollo inicial
-
-🙏 Agradecimientos
-
-    Municipalidad de Santiago por la inspiración
-
-    Comunidad open source por las herramientas
+Código abierto.
+```

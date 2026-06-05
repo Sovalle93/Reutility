@@ -1,161 +1,112 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { getPlazaById, getReviewsByPlaza, createReview } from '../../../services/api'
+import { useParams } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
+import { usePlazaData } from '../hooks/usePlazaData';
+import { PlazaInfo } from '../components/PlazaInfo';
+import { ReviewForm } from '../components/ReviewForm';
+import { ReviewList } from '../components/ReviewList';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
-export function PlazaDetailPage() {
-  const { id } = useParams()
-  const [plaza, setPlaza] = useState(null)
-  const [reviews, setReviews] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [rating, setRating] = useState(5)
-  const [comentario, setComentario] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+export const PlazaDetailPage = () => {
+    const { id } = useParams();
+    const { usuario } = useAuth();
+    const { plaza, reviews, userReview, loading, refreshing, error, submitReview, removeReview } = usePlazaData(id, usuario);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [deletingReviewId, setDeletingReviewId] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [plazaData, reviewsData] = await Promise.all([
-          getPlazaById(id),
-          getReviewsByPlaza(id)
-        ])
-        setPlaza(plazaData)
-        setReviews(reviewsData)
-      } catch (error) {
-        console.error('Error cargando datos:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [id])
+    const handleSubmit = async (rating, comentario) => {
+        setIsSubmitting(true);
+        const result = await submitReview(rating, comentario, !!userReview);
+        setIsSubmitting(false);
 
-  const handleSubmitReview = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
-    
-    try {
-      await createReview(id, {
-        rating,
-        comentario,
-        usuario_nombre: 'Anónimo'
-      })
-      
-      // Recargar reviews
-      const newReviews = await getReviewsByPlaza(id)
-      setReviews(newReviews)
-      
-      // Actualizar promedio de la plaza
-      const updatedPlaza = await getPlazaById(id)
-      setPlaza(updatedPlaza)
-      
-      // Limpiar formulario
-      setComentario('')
-      setRating(5)
-      
-    } catch (error) {
-      console.error('Error enviando review:', error)
-    } finally {
-      setSubmitting(false)
-    }
-  }
+        if (!result.success) {
+            toast.error(result.error);
+        }
+    };
 
-  if (loading) {
-    return <div className="text-center py-12">Cargando...</div>
-  }
-
-  if (!plaza) {
-    return <div className="text-center py-12">Plaza no encontrada</div>
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto">
-      {/* Información de la plaza */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h1 className="text-3xl font-bold text-emerald-800 mb-2">{plaza.nombre}</h1>
-        <p className="text-gray-600 mb-4">{plaza.municipio} • {plaza.direccion}</p>
-        
-        <div className="flex items-center mb-4">
-          <span className="text-2xl text-emerald-500 mr-2">★</span>
-          <span className="text-2xl font-bold">{parseFloat(plaza.rating_promedio).toFixed(1)}</span>
-          <span className="text-gray-500 ml-2">({plaza.total_reviews} reviews)</span>
-        </div>
-        
-        <p className="text-gray-700">{plaza.descripcion}</p>
-      </div>
-
-      {/* Formulario para agregar review */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-2xl font-bold mb-4">Deja tu opinión</h2>
-        <form onSubmit={handleSubmitReview}>
-          <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2">Calificación</label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  className={`text-2xl ${star <= rating ? 'text-emerald-500' : 'text-gray-300'}`}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2">Comentario</label>
-            <textarea
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              rows="4"
-              required
-              placeholder="¿Qué opinas de esta plaza?"
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={submitting}
-            className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition disabled:bg-gray-400"
-          >
-            {submitting ? 'Enviando...' : 'Enviar opinión'}
-          </button>
-        </form>
-      </div>
-
-      {/* Lista de reviews */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-4">Opiniones de la comunidad</h2>
-        
-        {reviews.length === 0 ? (
-          <p className="text-gray-500">No hay opiniones aún. Sé el primero en comentar.</p>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <div key={review.id} className="border-b border-gray-200 pb-4 last:border-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{review.usuario_nombre}</span>
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-sm ${i < review.rating ? 'text-emerald-500' : 'text-gray-300'}`}>
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {new Date(review.created_at).toLocaleDateString('es-CL')}
-                  </span>
+    const askDeleteConfirmation = () => new Promise((resolve) => {
+        toast.custom((t) => (
+            <div className="max-w-sm w-full bg-white border border-gray-200 rounded-2xl shadow-lg p-4 text-left">
+                <p className="text-gray-900 font-semibold mb-3">¿Eliminar tu comentario?</p>
+                <p className="text-sm text-gray-600 mb-4">Esta acción no se puede deshacer.</p>
+                <div className="flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            resolve(false);
+                        }}
+                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            resolve(true);
+                        }}
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+                    >
+                        Eliminar
+                    </button>
                 </div>
-                <p className="text-gray-700">{review.comentario}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+            </div>
+        ), {
+            duration: Infinity,
+            position: 'bottom-center'
+        });
+    });
+
+    const handleDelete = async (reviewId) => {
+        const confirmed = await askDeleteConfirmation();
+        if (!confirmed) return;
+
+        setDeletingReviewId(reviewId);
+        const result = await removeReview(reviewId);
+        setDeletingReviewId(null);
+
+        if (!result.success) {
+            toast.error(result.error);
+        }
+    };
+
+    if (loading) {
+        return <div className="text-center py-12">Cargando...</div>;
+    }
+
+    if (error) {
+        return <div className="text-center py-12 text-red-600">{error}</div>;
+    }
+
+    if (!plaza) {
+        return <div className="text-center py-12">Plaza no encontrada</div>;
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto">
+            <PlazaInfo plaza={plaza} />
+            {refreshing && (
+                <div className="text-sm text-gray-600 mb-6 flex items-center gap-2 animate-pulse">
+                    <svg className="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Actualizando comentarios...</span>
+                </div>
+            )}
+            <ReviewForm 
+                usuario={usuario}
+                existingReview={userReview}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+            />
+            <ReviewList 
+                reviews={reviews}
+                userReviewId={userReview?.id}
+                onDelete={handleDelete}
+                deletingReviewId={deletingReviewId}
+            />
+        </div>
+    );
+};
