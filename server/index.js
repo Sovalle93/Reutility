@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const plazaRoutes = require('./routes/plazaRoutes');
 const userRoutes = require('./routes/userRoutes');
 const alertaRoutes = require('./routes/alertaRoutes');
+const municipioRoutes = require('./routes/municipioRoutes');
 
 // Configuraciones
 require('./config/passport');
@@ -31,6 +32,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api', municipioRoutes);
 app.use('/api', plazaRoutes);
 app.use('/api', userRoutes);
 app.use('/api', alertaRoutes);

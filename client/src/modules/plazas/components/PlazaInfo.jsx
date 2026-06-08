@@ -2,7 +2,7 @@ export const PlazaInfo = ({ plaza }) => {
     return (
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h1 className="text-3xl font-bold text-emerald-800 mb-2">{plaza.nombre}</h1>
-            <p className="text-gray-600 mb-4">{plaza.municipio} • {plaza.direccion}</p>
+            <p className="text-gray-600 mb-4">{plaza.municipio_nombre || plaza.municipio} • {plaza.direccion}</p>
             
             <div className="flex items-center mb-4">
                 <span className="text-2xl text-emerald-500 mr-2">★</span>

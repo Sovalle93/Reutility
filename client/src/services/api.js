@@ -1,7 +1,27 @@
 const API_URL = 'http://localhost:5000/api';
 
-export const getPlazas = async () => {
-    const res = await fetch(`${API_URL}/plazas`);
+export const getRanking = async (municipioId = null, limit = 10) => {
+    let url = `${API_URL}/ranking?limit=${limit}`;
+    if (municipioId) {
+        url += `&municipio_id=${municipioId}`;
+    }
+    const res = await fetch(url);
+    return res.json();
+};
+
+// ===== MUNICIPIOS API =====
+export const getMunicipios = async () => {
+    const res = await fetch(`${API_URL}/municipios`);
+    return res.json();
+};
+
+// ===== PLAZAS API =====
+export const getPlazas = async (municipioId = null) => {
+    let url = `${API_URL}/plazas`;
+    if (municipioId) {
+        url += `?municipio_id=${municipioId}`;
+    }
+    const res = await fetch(url);
     return res.json();
 };
 
@@ -31,7 +51,6 @@ export const createReview = async (plazaId, reviewData) => {
     return res.json();
 };
 
-// usuarioId no es necesario porque el backend lo obtiene de la cookie
 export const getUserReview = async (plazaId) => {
     const res = await fetch(`${API_URL}/plazas/${plazaId}/reviews/usuario`, {
         credentials: 'include'
@@ -85,7 +104,6 @@ export const getMisReviews = async () => {
 };
 
 // ===== ALERTAS API =====
-
 export const getAlertas = async (status = null) => {
     const url = status ? `${API_URL}/alertas?status=${status}` : `${API_URL}/alertas`;
     const res = await fetch(url);
@@ -101,7 +119,7 @@ export const createAlerta = async (formData) => {
     const res = await fetch(`${API_URL}/alertas`, {
         method: 'POST',
         credentials: 'include',
-        body: formData // FormData with image
+        body: formData
     });
     
     if (!res.ok) {
@@ -141,3 +159,4 @@ export const getMisAlertas = async () => {
 
     return res.json();
 };
+

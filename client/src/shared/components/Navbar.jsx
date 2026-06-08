@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
 export const Navbar = () => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { usuario } = useAuth();
 
     return (
@@ -20,7 +18,8 @@ export const Navbar = () => {
                     <div className="hidden md:flex items-center space-x-8">
                         <Link to="/plazas" className="text-white hover:text-emerald-200">Plazas</Link>
                         <Link to="/alertas" className="text-white hover:text-emerald-200">Alertas</Link>
-                        
+                        <Link to="/ranking" className="text-white hover:text-emerald-200">Ranking</Link>
+
                         {usuario ? (
                             <div className="flex items-center gap-4">
                                 <Link to="/perfil" className="text-white hover:text-emerald-200">

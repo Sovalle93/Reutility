@@ -14,7 +14,7 @@ const registrar = async (req, res) => {
         const result = await pool.query(
             `INSERT INTO usuarios (email, password_hash, nombre, provider) 
              VALUES ($1, $2, $3, 'email') 
-             RETURNING id, email, nombre, rol`,
+             RETURNING id, email, nombre, rol, municipio_id`,
             [email, passwordHash, nombre]
         );
 
@@ -39,7 +39,7 @@ const login = async (req, res) => {
         const { email, password } = req.body;
 
         const result = await pool.query(
-            'SELECT id, email, nombre, password_hash, rol FROM usuarios WHERE email = $1 AND provider = $2',
+            'SELECT id, email, nombre, password_hash, rol, municipio_id FROM usuarios WHERE email = $1 AND provider = $2',
             [email, 'email']
         );
 
@@ -69,7 +69,8 @@ const login = async (req, res) => {
                 id: usuario.id,
                 email: usuario.email,
                 nombre: usuario.nombre,
-                rol: usuario.rol
+                rol: usuario.rol,
+                municipio_id: usuario.municipio_id
             }
         });
     } catch (error) {
@@ -97,7 +98,10 @@ const obtenerPerfil = async (req, res) => {
         }
 
         const result = await pool.query(
-            'SELECT id, email, nombre, rol FROM usuarios WHERE id = $1',
+            `SELECT u.id, u.email, u.nombre, u.rol, u.municipio_id, m.nombre as municipio_nombre 
+             FROM usuarios u 
+             LEFT JOIN municipios m ON u.municipio_id = m.id 
+             WHERE u.id = $1`,
             [decoded.id]
         );
 
@@ -116,7 +120,10 @@ const googleCallback = async (req, res) => {
         const { generateToken } = require('../utils/auth');
         
         let result = await pool.query(
-            'SELECT * FROM usuarios WHERE provider = $1 AND provider_id = $2',
+            `SELECT u.id, u.email, u.nombre, u.rol, u.municipio_id, u.provider, u.provider_id, u.email_verificado, m.nombre as municipio_nombre 
+             FROM usuarios u 
+             LEFT JOIN municipios m ON u.municipio_id = m.id 
+             WHERE u.provider = $1 AND u.provider_id = $2`,
             ['google', req.user.id]
         );
 
@@ -125,7 +132,7 @@ const googleCallback = async (req, res) => {
             const newUser = await pool.query(
                 `INSERT INTO usuarios (email, nombre, provider, provider_id, email_verificado) 
                  VALUES ($1, $2, 'google', $3, true) 
-                 RETURNING id, email, nombre, rol`,
+                 RETURNING id, email, nombre, rol, municipio_id`,
                 [req.user.email, req.user.name, req.user.id]
             );
             usuario = newUser.rows[0];

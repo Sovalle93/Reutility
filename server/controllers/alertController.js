@@ -6,28 +6,22 @@ exports.getAlertas = async (req, res) => {
         let query = `
             SELECT a.id, a.titulo, a.descripcion, a.categoria, a.estado, 
                    a.foto_url as imagen_url, a.notas_actualizacion as notas, a.usuario_id, a.created_at,
-                   u.nombre as usuario_nombre
+                   u.nombre as usuario_nombre, p.municipio_id, m.nombre as municipio_nombre
             FROM alertas a
             JOIN usuarios u ON a.usuario_id = u.id
-            ORDER BY a.created_at DESC
+            LEFT JOIN plazas p ON a.plaza_id = p.id
+            LEFT JOIN municipios m ON p.municipio_id = m.id
         `;
+        let params = [];
 
         if (status) {
-            query = `
-                SELECT a.id, a.titulo, a.descripcion, a.categoria, a.estado, 
-                       a.foto_url as imagen_url, a.notas_actualizacion as notas, a.usuario_id, a.created_at,
-                       u.nombre as usuario_nombre
-                FROM alertas a
-                JOIN usuarios u ON a.usuario_id = u.id
-                WHERE a.estado = $1
-                ORDER BY a.created_at DESC
-            `;
+            query += ' WHERE a.estado = $1 ';
+            params.push(status);
         }
 
-        const result = status
-            ? await db.query(query, [status])
-            : await db.query(query);
+        query += ' ORDER BY a.created_at DESC';
 
+        const result = await db.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Error al obtener alertas:', error);
@@ -41,9 +35,11 @@ exports.getAlertaById = async (req, res) => {
         const result = await db.query(`
             SELECT a.id, a.titulo, a.descripcion, a.categoria, a.estado, 
                    a.foto_url as imagen_url, a.notas_actualizacion as notas, a.usuario_id, a.created_at,
-                   u.nombre as usuario_nombre
+                   u.nombre as usuario_nombre, p.municipio_id, m.nombre as municipio_nombre
             FROM alertas a
             JOIN usuarios u ON a.usuario_id = u.id
+            LEFT JOIN plazas p ON a.plaza_id = p.id
+            LEFT JOIN municipios m ON p.municipio_id = m.id
             WHERE a.id = $1
         `, [id]);
 
@@ -61,7 +57,7 @@ exports.getAlertaById = async (req, res) => {
 exports.createAlerta = async (req, res) => {
     try {
         const { titulo, descripcion, categoria } = req.body;
-        const usuarioId = req.user.id;
+        const usuarioId = req.usuario.id;
         const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
         if (!titulo || !descripcion || !categoria) {
@@ -89,16 +85,34 @@ exports.updateAlertaStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status, notas } = req.body;
-        const usuarioId = req.user.id;
+        const usuarioId = req.usuario.id;
+        const userRol = req.usuario.rol;
+        const userMunicipioId = req.usuario.municipio_id;
 
-        // Validar que sea municipal worker
-        const userResult = await db.query(
-            'SELECT rol FROM usuarios WHERE id = $1',
-            [usuarioId]
-        );
+        // Get alert with plaza info
+        const alertaResult = await db.query(`
+            SELECT a.*, p.municipio_id
+            FROM alertas a
+            LEFT JOIN plazas p ON a.plaza_id = p.id
+            WHERE a.id = $1
+        `, [id]);
 
-        if (userResult.rows.length === 0 || !['municipal_worker', 'admin'].includes(userResult.rows[0].rol)) {
+        if (alertaResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Alerta no encontrada' });
+        }
+
+        const alerta = alertaResult.rows[0];
+
+        // Validar permisos: must be municipal_worker or admin
+        if (!['municipal_worker', 'admin'].includes(userRol)) {
             return res.status(403).json({ error: 'No tienes permisos para actualizar alertas' });
+        }
+
+        // If fiscalizador or municipal_worker, check municipio access
+        if (req.municipioContext && req.municipioContext.shouldFilterByMunicipio()) {
+            if (alerta.municipio_id && !req.municipioContext.canAccessMunicipio(alerta.municipio_id)) {
+                return res.status(403).json({ error: 'No tienes acceso a esta alerta' });
+            }
         }
 
         const result = await db.query(`
@@ -107,10 +121,6 @@ exports.updateAlertaStatus = async (req, res) => {
             WHERE id = $3
             RETURNING *
         `, [status, notas || null, id]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Alerta no encontrada' });
-        }
 
         res.json(result.rows[0]);
     } catch (error) {
@@ -121,14 +131,16 @@ exports.updateAlertaStatus = async (req, res) => {
 
 exports.getMisAlertas = async (req, res) => {
     try {
-        const usuarioId = req.user.id;
+        const usuarioId = req.usuario.id;
 
         const result = await db.query(`
             SELECT a.id, a.titulo, a.descripcion, a.categoria, a.estado, 
                    a.foto_url as imagen_url, a.notas_actualizacion as notas, a.usuario_id, a.created_at,
-                   u.nombre as usuario_nombre
+                   u.nombre as usuario_nombre, p.municipio_id, m.nombre as municipio_nombre
             FROM alertas a
             JOIN usuarios u ON a.usuario_id = u.id
+            LEFT JOIN plazas p ON a.plaza_id = p.id
+            LEFT JOIN municipios m ON p.municipio_id = m.id
             WHERE a.usuario_id = $1
             ORDER BY a.created_at DESC
         `, [usuarioId]);

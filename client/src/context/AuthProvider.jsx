@@ -22,18 +22,28 @@ export const AuthProvider = ({ children }) => {
             if (!isMounted.current) return null;
 
             if (!res.ok) {
-                if (isMounted.current) setUsuario(null);
+                if (isMounted.current) {
+                    setUsuario(null);
+                    localStorage.removeItem('user_municipio_id');
+                }
                 return null;
             }
 
             const data = await res.json();
             if (isMounted.current) {
                 setUsuario(data);
-                console.log('✅ Usuario autenticado:', data.nombre);
+                // Persist municipio_id to localStorage for UI persistence
+                if (data.municipio_id) {
+                    localStorage.setItem('user_municipio_id', data.municipio_id);
+                }
+                console.log('✅ Usuario autenticado:', data.nombre, `(Municipio: ${data.municipio_nombre || 'No asignado'})`);
             }
             return data;
         } catch (error) {
-            if (isMounted.current) setUsuario(null);
+            if (isMounted.current) {
+                setUsuario(null);
+                localStorage.removeItem('user_municipio_id');
+            }
             return null;
         } finally {
             if (isMounted.current) setLoading(false);
@@ -106,6 +116,7 @@ export const AuthProvider = ({ children }) => {
         });
         if (isMounted.current) {
             setUsuario(null);
+            localStorage.removeItem('user_municipio_id');
         }
     };
 

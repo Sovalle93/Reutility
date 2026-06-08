@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const { protegerRuta } = require('../middleware/auth');
+const { setMunicipioContext } = require('../middleware/municipio');
 const alertController = require('../controllers/alertController');
 
 // Configurar multer para almacenar imágenes
@@ -35,8 +36,8 @@ const upload = multer({
 // Rutas
 router.get('/alertas', alertController.getAlertas);
 router.get('/alertas/:id', alertController.getAlertaById);
-router.post('/alertas', protegerRuta, upload.single('imagen'), alertController.createAlerta);
-router.put('/alertas/:id/status', protegerRuta, alertController.updateAlertaStatus);
-router.get('/mis-alertas', protegerRuta, alertController.getMisAlertas);
+router.post('/alertas', protegerRuta, setMunicipioContext, upload.single('imagen'), alertController.createAlerta);
+router.put('/alertas/:id/status', protegerRuta, setMunicipioContext, alertController.updateAlertaStatus);
+router.get('/mis-alertas', protegerRuta, setMunicipioContext, alertController.getMisAlertas);
 
 module.exports = router;

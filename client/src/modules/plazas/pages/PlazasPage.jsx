@@ -1,18 +1,29 @@
 import { useState, useEffect } from 'react'
 import { getPlazas } from '../../../services/api'
 import { useNavigate } from 'react-router-dom'
+import { MunicipioSelector } from '../components/MunicipioSelector'
+import { useAuth } from '../../../hooks/useAuth'
 
 export function PlazasPage() {
   const [plazas, setPlazas] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-
+  const [municipioFilter, setMunicipioFilter] = useState(null)
+  const { usuario } = useAuth()
   const navigate = useNavigate()
+
+  // Load municipio filter from localStorage on mount
+  useEffect(() => {
+    const savedMunicipioFilter = localStorage.getItem('plaza_municipio_filter');
+    if (savedMunicipioFilter) {
+      setMunicipioFilter(parseInt(savedMunicipioFilter));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPlazas = async () => {
       try {
-        const data = await getPlazas()
+        const data = await getPlazas(municipioFilter)
         setPlazas(data)
       } catch (error) {
         console.error('Error cargando plazas:', error)
@@ -21,7 +32,17 @@ export function PlazasPage() {
       }
     }
     fetchPlazas()
-  }, [])
+  }, [municipioFilter])
+
+  const handleMunicipioChange = (newMunicipioId) => {
+    setMunicipioFilter(newMunicipioId);
+    // Persist selection to localStorage
+    if (newMunicipioId) {
+      localStorage.setItem('plaza_municipio_filter', newMunicipioId);
+    } else {
+      localStorage.removeItem('plaza_municipio_filter');
+    }
+  }
 
   const plazasFiltradas = plazas.filter(plaza =>
     plaza.nombre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -38,17 +59,27 @@ export function PlazasPage() {
     )
   }
 
+  // For fiscalizadores and municipal_workers, show their municipality
+  const isFiscalizador = usuario?.rol === 'fiscalizador' || usuario?.rol === 'municipal_worker';
+  const showMunicipioBadge = isFiscalizador && usuario?.municipio_nombre;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header centrado */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-emerald-800 mb-2">Plazas disponibles</h1>
         <p className="text-gray-600">Explora y califica las plazas de tu ciudad</p>
+        {showMunicipioBadge && (
+          <p className="text-sm text-emerald-700 mt-2 font-semibold">
+            📍 Municipio: {usuario.municipio_nombre}
+          </p>
+        )}
       </div>
 
-      {/* Barra de búsqueda centrada */}
-      <div className="flex justify-center mb-8">
-        <div className="w-full max-w-md">
+      {/* Filters section */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8 justify-between items-center">
+        {/* Search bar */}
+        <div className="w-full md:flex-1">
           <input
             type="text"
             placeholder="🔍 Buscar plaza..."
@@ -57,6 +88,17 @@ export function PlazasPage() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>
+
+        {/* Municipio selector - only show for ciudadanos and admins */}
+        {!isFiscalizador && (
+          <div className="w-full md:w-auto">
+            <MunicipioSelector 
+              value={municipioFilter} 
+              onSelect={handleMunicipioChange}
+              showLabel={true}
+            />
+          </div>
+        )}
       </div>
 
       {/* Grid de plazas */}
@@ -65,7 +107,7 @@ export function PlazasPage() {
           <div key={plaza.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
             <div className="p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-2">{plaza.nombre}</h3>
-              <p className="text-emerald-600 text-sm mb-2">📍 {plaza.municipio}</p>
+              <p className="text-emerald-600 text-sm mb-2">📍 {plaza.municipio_nombre || plaza.municipio}</p>
               <div className="flex items-center mb-3">
                 <div className="flex items-center bg-emerald-50 px-2 py-1 rounded-lg">
                   <span className="text-emerald-500 mr-1">★</span>

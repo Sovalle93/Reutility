@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { protegerRuta } = require('../middleware/auth');
+const { setMunicipioContext } = require('../middleware/municipio');
 const userController = require('../controllers/userController');
 
-router.get('/mis-reviews', protegerRuta, userController.getMisReviews);
-router.get('/plazas/:id/reviews/usuario', protegerRuta, userController.getUserReview);
-router.put('/reviews/:reviewId', protegerRuta, userController.updateReview);
-router.delete('/reviews/:reviewId', protegerRuta, userController.deleteReview);
+router.get('/mis-reviews', protegerRuta, setMunicipioContext, userController.getMisReviews);
+router.get('/plazas/:id/reviews/usuario', protegerRuta, setMunicipioContext, userController.getUserReview);
+router.put('/reviews/:reviewId', protegerRuta, setMunicipioContext, userController.updateReview);
+router.delete('/reviews/:reviewId', protegerRuta, setMunicipioContext, userController.deleteReview);
 
 module.exports = router;

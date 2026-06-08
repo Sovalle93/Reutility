@@ -9,6 +9,7 @@ import { LoginPage } from './modules/auth/pages/LoginPage';
 import { PerfilPage } from './modules/auth/pages/PerfilPage';
 import { AlertasPage } from './modules/alertas/pages/AlertasPage';
 import { AlertDetailPage } from './modules/alertas/pages/AlertDetailPage';
+import { RankingPage } from './modules/plazas/pages/RankingPage';
 
 const RutaProtegida = ({ children }) => {
     const { usuario, loading } = useAuth();
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/plazas/:id" element={<PlazaDetailPage />} />
                 <Route path="/alertas" element={<AlertasPage />} />
                 <Route path="/alertas/:id" element={<AlertDetailPage />} />
+                <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 
