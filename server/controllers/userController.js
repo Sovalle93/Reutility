@@ -1,32 +1,9 @@
 const pool = require('../config/db');
 
-const getMisAlertas = async (req, res) => {
-    try {
-        const usuario_id = req.usuario.id;
-        
-        const result = await pool.query(`
-            SELECT a.*, p.nombre as plaza_nombre, p.municipio_id,
-                   m.nombre as municipio_nombre
-            FROM alertas a
-            JOIN plazas p ON a.plaza_id = p.id
-            LEFT JOIN municipios m ON p.municipio_id = m.id
-            WHERE a.usuario_id = $1
-            ORDER BY a.created_at DESC
-        `, [usuario_id]);
-        
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error en getMisAlertas:', error);
-        res.status(500).json({ error: error.message });
-    }
-};
-
-module.exports = { getMisReviews, getUserReview, updateReview, deleteReview, getMisAlertas };
-
+// ===== MIS REVIEWS =====
 const getMisReviews = async (req, res) => {
     try {
         const usuario_id = req.usuario.id;
-        
         const result = await pool.query(
             `SELECT r.*, p.nombre as plaza_nombre, p.id as plaza_id
              FROM reviews r
@@ -35,7 +12,6 @@ const getMisReviews = async (req, res) => {
              ORDER BY r.created_at DESC`,
             [usuario_id]
         );
-        
         res.json(result.rows);
     } catch (error) {
         console.error('Error en getMisReviews:', error);
@@ -43,6 +19,7 @@ const getMisReviews = async (req, res) => {
     }
 };
 
+// ===== USER REVIEW FOR A PLAZA =====
 const getUserReview = async (req, res) => {
     try {
         const { id } = req.params;
@@ -53,10 +30,12 @@ const getUserReview = async (req, res) => {
         );
         res.json(result.rows[0] || null);
     } catch (error) {
+        console.error('Error en getUserReview:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
+// ===== UPDATE REVIEW =====
 const updateReview = async (req, res) => {
     try {
         const { reviewId } = req.params;
@@ -87,16 +66,17 @@ const updateReview = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
+        console.error('Error en updateReview:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
+// ===== DELETE REVIEW =====
 const deleteReview = async (req, res) => {
     try {
         const { reviewId } = req.params;
         const usuario_id = req.usuario.id;
 
-        // Verificar que la review pertenece al usuario
         const reviewExistente = await pool.query(
             'SELECT * FROM reviews WHERE id = $1 AND usuario_id = $2',
             [reviewId, usuario_id]
@@ -108,10 +88,8 @@ const deleteReview = async (req, res) => {
 
         const plazaId = reviewExistente.rows[0].plaza_id;
 
-        // Eliminar review
         await pool.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
 
-        // Actualizar rating promedio de la plaza
         await pool.query(
             `UPDATE plazas 
              SET rating_promedio = (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE plaza_id = $1),
@@ -122,8 +100,38 @@ const deleteReview = async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
+        console.error('Error en deleteReview:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
-module.exports = { getMisReviews, getUserReview, updateReview, deleteReview };
+// ===== MIS ALERTAS =====
+const getMisAlertas = async (req, res) => {
+    try {
+        const usuario_id = req.usuario.id;
+        
+        const result = await pool.query(`
+            SELECT a.*, p.nombre as plaza_nombre, p.municipio_id,
+                   m.nombre as municipio_nombre
+            FROM alertas a
+            JOIN plazas p ON a.plaza_id = p.id
+            LEFT JOIN municipios m ON p.municipio_id = m.id
+            WHERE a.usuario_id = $1
+            ORDER BY a.created_at DESC
+        `, [usuario_id]);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error en getMisAlertas:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// ===== EXPORTAR AL FINAL (después de todas las funciones) =====
+module.exports = { 
+    getMisReviews, 
+    getUserReview, 
+    updateReview, 
+    deleteReview, 
+    getMisAlertas 
+};

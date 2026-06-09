@@ -1,92 +1,64 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import toast from 'react-hot-toast';
 
-export const LoginPage = () => {
-    const [isLogin, setIsLogin] = useState(true);
+export const RegisterPage = () => {
+    const [nombre, setNombre] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [nombre, setNombre] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    
-    const { login, registrar, loginWithGoogle } = useAuth();
+    const { registrar, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-    const fromLocation = location.state?.from;
-    const redirectFrom = fromLocation ? `${fromLocation.pathname}${fromLocation.search || ''}` : '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        
+        if (password !== confirmPassword) {
+            toast.error('Las contraseñas no coinciden');
+            return;
+        }
+        
+        if (password.length < 8) {
+            toast.error('La contraseña debe tener al menos 8 caracteres');
+            return;
+        }
+        
         setLoading(true);
-
-        let result;
-        if (isLogin) {
-            result = await login(email, password);
-        } else {
-            result = await registrar(email, password, nombre);
-        }
-
+        const result = await registrar(email, password, nombre);
         setLoading(false);
-
+        
         if (result.success) {
-            toast.success(isLogin ? '¡Bienvenido de vuelta!' : '¡Cuenta creada exitosamente!', {
-                icon: '🎉',
-                duration: 3000
-            });
-            setError('');
-            navigate(redirectFrom, { replace: true });
+            toast.success('¡Cuenta creada exitosamente!');
+            navigate('/');
         } else {
-            const message = result.error || 'Ocurrió un error';
-            setError(message);
-            toast.error(message);
+            toast.error(result.error);
         }
-    };
-
-    const handleGoogleLogin = () => {
-        setError('');
-        const fromState = location.state?.from;
-        const redirectTo = fromState
-            ? `${fromState.pathname}${fromState.search || ''}`
-            : '/';
-        toast.loading('Redirigiendo a Google...');
-        loginWithGoogle(redirectTo);
     };
 
     return (
         <div className="min-h-[80vh] flex items-center justify-center">
             <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-emerald-700">Reutility</h1>
-                    <p className="text-gray-600 mt-2">
-                        {isLogin ? 'Inicia sesión en tu cuenta' : 'Crea una cuenta nueva'}
-                    </p>
+                    <h1 className="text-3xl font-bold text-emerald-700">Crear cuenta</h1>
+                    <p className="text-gray-600 mt-2">Regístrate para comentar y reportar alertas</p>
                 </div>
 
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                    </div>
-                )}
-
                 <form onSubmit={handleSubmit}>
-                    {!isLogin && (
-                        <div className="mb-4">
-                            <label className="block text-gray-700 font-semibold mb-2">
-                                Nombre completo
-                            </label>
-                            <input
-                                type="text"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                required={!isLogin}
-                                disabled={loading}
-                            />
-                        </div>
-                    )}
+                    <div className="mb-4">
+                        <label className="block text-gray-700 font-semibold mb-2">
+                            Nombre completo
+                        </label>
+                        <input
+                            type="text"
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            required
+                            disabled={loading}
+                        />
+                    </div>
 
                     <div className="mb-4">
                         <label className="block text-gray-700 font-semibold mb-2">
@@ -102,7 +74,7 @@ export const LoginPage = () => {
                         />
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-4">
                         <label className="block text-gray-700 font-semibold mb-2">
                             Contraseña
                         </label>
@@ -115,11 +87,21 @@ export const LoginPage = () => {
                             disabled={loading}
                             minLength={8}
                         />
-                        {!isLogin && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                Mínimo 8 caracteres
-                            </p>
-                        )}
+                        <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
+                    </div>
+
+                    <div className="mb-6">
+                        <label className="block text-gray-700 font-semibold mb-2">
+                            Confirmar contraseña
+                        </label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            required
+                            disabled={loading}
+                        />
                     </div>
 
                     <button
@@ -127,7 +109,7 @@ export const LoginPage = () => {
                         disabled={loading}
                         className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition disabled:bg-gray-400 mb-4"
                     >
-                        {loading ? 'Cargando...' : (isLogin ? 'Iniciar sesión' : 'Registrarse')}
+                        {loading ? 'Creando cuenta...' : 'Registrarse'}
                     </button>
                 </form>
 
@@ -141,7 +123,7 @@ export const LoginPage = () => {
                 </div>
 
                 <button
-                    onClick={handleGoogleLogin}
+                    onClick={loginWithGoogle}
                     disabled={loading}
                     className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition flex items-center justify-center gap-2"
                 >
@@ -155,15 +137,14 @@ export const LoginPage = () => {
                 </button>
 
                 <div className="text-center mt-4">
-                    <button
-                        onClick={() => setIsLogin(!isLogin)}
-                        className="text-emerald-600 hover:text-emerald-700"
-                        disabled={loading}
-                    >
-                        {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
-                    </button>
+                    <p className="text-sm text-gray-600">
+                        ¿Ya tienes cuenta?{' '}
+                        <Link to="/login" className="text-emerald-600 hover:underline">
+                            Inicia sesión
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>
     );
-}
+};

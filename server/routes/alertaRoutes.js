@@ -1,43 +1,43 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
 const { protegerRuta } = require('../middleware/auth');
 const { setMunicipioContext } = require('../middleware/municipio');
 const alertController = require('../controllers/alertController');
+const multer = require('multer');
+const path = require('path');
 
-// Configurar multer para almacenar imágenes
+// Configuración de multer para imágenes
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads'));
+        cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'alerta-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-const upload = multer({
+const upload = multer({ 
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         if (mimetype && extname) {
             return cb(null, true);
-        } else {
-            cb(new Error('Solo se permiten imágenes'));
         }
+        cb(new Error('Solo se permiten imágenes'));
     }
 });
 
-// Rutas
+// Rutas públicas
 router.get('/alertas', alertController.getAlertas);
 router.get('/alertas/:id', alertController.getAlertaById);
-router.post('/alertas', protegerRuta, setMunicipioContext, upload.single('imagen'), alertController.createAlerta);
+
+// Rutas protegidas
+router.post('/alertas', protegerRuta, upload.single('imagen'), alertController.createAlerta);
 router.put('/alertas/:id/status', protegerRuta, setMunicipioContext, alertController.updateAlertaStatus);
-router.get('/mis-alertas', protegerRuta, setMunicipioContext, alertController.getMisAlertas);
+router.get('/mis-alertas', protegerRuta, alertController.getMisAlertas);
 
 module.exports = router;

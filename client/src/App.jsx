@@ -10,13 +10,21 @@ import { PerfilPage } from './modules/auth/pages/PerfilPage';
 import { AlertasPage } from './modules/alertas/pages/AlertasPage';
 import { AlertDetailPage } from './modules/alertas/pages/AlertDetailPage';
 import { RankingPage } from './modules/plazas/pages/RankingPage';
+import { FiscalizadorPanel } from './modules/alertas/pages/FiscalizadorPanel';
+import { RegisterPage } from './modules/auth/pages/RegisterPage';
 
-const RutaProtegida = ({ children }) => {
+const RutaProtegida = ({ children, allowedRoles = [] }) => {
     const { usuario, loading } = useAuth();
     const location = useLocation();
 
     if (loading) return <div className="text-center py-12">Verificando sesión...</div>;
     if (!usuario) return <Navigate to="/login" replace state={{ from: location }} />;
+    
+    // Si hay roles permitidos y el usuario no tiene uno autorizado
+    if (allowedRoles.length > 0 && !allowedRoles.includes(usuario.rol)) {
+        return <Navigate to="/" replace />;
+    }
+    
     return children;
 };
 
@@ -32,12 +40,20 @@ function App() {
                 <Route path="/alertas/:id" element={<AlertDetailPage />} />
                 <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 
-                {/* Rutas protegidas */}
+                {/* Perfil - solo ciudadanos y admin */}
                 <Route path="/perfil" element={
-                    <RutaProtegida>
+                    <RutaProtegida allowedRoles={['ciudadano', 'admin']}>
                         <PerfilPage />
+                    </RutaProtegida>
+                } />
+
+                {/* Panel Fiscalizador - solo fiscalizador, municipal_worker y admin */}
+                <Route path="/fiscalizador" element={
+                    <RutaProtegida allowedRoles={['fiscalizador', 'municipal_worker', 'admin']}>
+                        <FiscalizadorPanel />
                     </RutaProtegida>
                 } />
                 

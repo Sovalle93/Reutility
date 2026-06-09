@@ -38,9 +38,14 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+        }
+
+        // Buscar usuario por email (sin filtrar por provider)
         const result = await pool.query(
-            'SELECT id, email, nombre, password_hash, rol, municipio_id FROM usuarios WHERE email = $1 AND provider = $2',
-            [email, 'email']
+            'SELECT id, email, nombre, password_hash, rol, municipio_id FROM usuarios WHERE email = $1',
+            [email]
         );
 
         if (result.rows.length === 0) {
@@ -48,11 +53,24 @@ const login = async (req, res) => {
         }
 
         const usuario = result.rows[0];
+
+        // ✅ VERIFICAR: Si el usuario no tiene password_hash (ej: usuario de Google)
+        if (!usuario.password_hash) {
+            return res.status(401).json({ 
+                error: 'Esta cuenta usa Google. Inicia sesión con Google.' 
+            });
+        }
+
+        // Verificar contraseña
+        const { verifyPassword } = require('../utils/auth');
         const valido = await verifyPassword(password, usuario.password_hash);
 
         if (!valido) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
+
+        // Actualizar último acceso
+        await pool.query('UPDATE usuarios SET ultimo_acceso = CURRENT_TIMESTAMP WHERE id = $1', [usuario.id]);
 
         const token = generateToken(usuario);
 
@@ -74,7 +92,8 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error en login:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
 

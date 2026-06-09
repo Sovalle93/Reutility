@@ -8,6 +8,9 @@ const hashPassword = async (password) => {
 };
 
 const verifyPassword = async (password, hash) => {
+    if (!password || !hash) {
+        return false;  // ❌ No lanzar error, solo retornar false
+    }
     return await bcrypt.compare(password, hash);
 };
 
