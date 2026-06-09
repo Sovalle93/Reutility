@@ -159,4 +159,3 @@ export const getMisAlertas = async () => {
 
     return res.json();
 };
-

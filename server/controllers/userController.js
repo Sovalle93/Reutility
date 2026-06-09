@@ -1,5 +1,28 @@
 const pool = require('../config/db');
 
+const getMisAlertas = async (req, res) => {
+    try {
+        const usuario_id = req.usuario.id;
+        
+        const result = await pool.query(`
+            SELECT a.*, p.nombre as plaza_nombre, p.municipio_id,
+                   m.nombre as municipio_nombre
+            FROM alertas a
+            JOIN plazas p ON a.plaza_id = p.id
+            LEFT JOIN municipios m ON p.municipio_id = m.id
+            WHERE a.usuario_id = $1
+            ORDER BY a.created_at DESC
+        `, [usuario_id]);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error en getMisAlertas:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { getMisReviews, getUserReview, updateReview, deleteReview, getMisAlertas };
+
 const getMisReviews = async (req, res) => {
     try {
         const usuario_id = req.usuario.id;
