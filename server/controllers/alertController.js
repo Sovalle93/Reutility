@@ -118,7 +118,7 @@ const updateAlertaStatus = async (req, res, next) => {
         const alerta = alertaResult.rows[0];
 
         // Solo municipal_worker o admin pueden actualizar
-        if (!['municipal_worker', 'admin'].includes(userRol)) {
+        if (!['municipal_worker', 'admin', 'fiscalizador'].includes(userRol)) {
             return res.status(403).json({ error: 'No tienes permisos para actualizar alertas' });
         }
 

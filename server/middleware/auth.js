@@ -14,7 +14,7 @@ const protegerRuta = async (req, res, next) => {
         }
 
         const result = await pool.query(
-            'SELECT id, email, nombre, rol, activo FROM usuarios WHERE id = $1',
+            'SELECT id, email, nombre, rol, municipio_id, activo FROM usuarios WHERE id = $1',
             [decoded.id]
         );
 

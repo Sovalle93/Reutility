@@ -9,6 +9,12 @@ const setMunicipioContext = (req, res, next) => {
         return res.status(401).json({ error: 'No autenticado' });
     }
 
+    console.log('🔍 Municipio Context - Usuario:', {
+        id: req.usuario.id,
+        rol: req.usuario.rol,
+        municipio_id: req.usuario.municipio_id  // ← VERIFICAR ESTO
+    });
+
     const { id, rol, municipio_id } = req.usuario;
 
     /**
