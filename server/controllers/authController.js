@@ -38,10 +38,6 @@ const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-        }
-
         // Buscar usuario por email (sin filtrar por provider)
         const result = await pool.query(
             'SELECT id, email, nombre, password_hash, rol, municipio_id FROM usuarios WHERE email = $1',

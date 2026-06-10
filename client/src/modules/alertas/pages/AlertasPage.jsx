@@ -42,9 +42,8 @@ export const AlertasPage = () => {
             {usuario && (
                 <div className="mb-6">
                     <Link to="/alertas/nueva">
-                        <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2">
-                            <span className="text-xl">+</span>
-                            Reportar nueva alerta
+                        <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700">
+                            + Reportar nueva alerta
                         </button>
                     </Link>
                 </div>

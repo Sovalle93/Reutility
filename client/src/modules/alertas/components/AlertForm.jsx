@@ -1,4 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { validateAlerta } from '../../../schemas/alertaSchema';
+import { getPlazas } from '../../../services/api';
 import toast from 'react-hot-toast';
 
 const Spinner = () => (
@@ -12,30 +14,54 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [categoria, setCategoria] = useState('basura');
+    const [plazaId, setPlazaId] = useState('');
+    const [plazas, setPlazas] = useState([]);
+    const [loadingPlazas, setLoadingPlazas] = useState(true);
     const [imagen, setImagen] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const fileInputRef = useRef(null);
 
     const categorias = [
-        { value: 'basura', label: '🗑️ Basura/Suciedad', emoji: '🗑️' },
-        { value: 'mantenimiento', label: '🔧 Mantenimiento/Daño', emoji: '🔧' },
-        { value: 'vandalismo', label: '✏️ Vandalismo', emoji: '✏️' },
-        { value: 'seguridad', label: '🚨 Seguridad', emoji: '🚨' },
-        { value: 'iluminacion', label: '💡 Iluminación', emoji: '💡' },
-        { value: 'otro', label: '📋 Otro', emoji: '📋' }
+        { value: 'basura', label: '🗑️ Basura/Suciedad' },
+        { value: 'mantenimiento', label: '🔧 Mantenimiento/Daño' },
+        { value: 'vandalismo', label: '✏️ Vandalismo' },
+        { value: 'seguridad', label: '🚨 Seguridad' },
+        { value: 'iluminacion', label: '💡 Iluminación' },
+        { value: 'otro', label: '📋 Otro' }
     ];
 
-    const isTituloValid = titulo.trim().length > 0;
-    const isDescripcionValid = descripcion.trim().length > 0;
+    // Cargar plazas al montar el componente
+    useEffect(() => {
+        const fetchPlazas = async () => {
+            try {
+                const data = await getPlazas();
+                setPlazas(data);
+            } catch (error) {
+                console.error('Error cargando plazas:', error);
+                toast.error('Error al cargar las plazas');
+            } finally {
+                setLoadingPlazas(false);
+            }
+        };
+        fetchPlazas();
+    }, []);
+
+    const isTituloValid = titulo.trim().length >= 5;
+    const isDescripcionValid = descripcion.trim().length >= 10;
+    const isPlazaValid = plazaId !== '' && !isNaN(parseInt(plazaId));
     const isImageValid = imagen !== null;
-    const isFormValid = isTituloValid && isDescripcionValid && isImageValid;
+    const isFormValid = isTituloValid && isDescripcionValid && isPlazaValid && isImageValid;
 
     const handleImageChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
                 toast.error('La imagen debe ser menor a 5MB');
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                toast.error('Solo se permiten imágenes');
                 return;
             }
             setImagen(file);
@@ -49,8 +75,17 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
         e.preventDefault();
         setSubmitted(true);
 
-        if (!isFormValid) {
-            toast.error('Por favor completa todos los campos y sube una imagen');
+        // Validar con Zod
+        const validation = validateAlerta({ 
+            titulo, 
+            descripcion, 
+            categoria, 
+            plaza_id: parseInt(plazaId) 
+        });
+        
+        if (!validation.success) {
+            const errorMessage = validation.error.errors[0]?.message || 'Datos inválidos';
+            toast.error(errorMessage);
             return;
         }
 
@@ -58,6 +93,7 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
         formData.append('titulo', titulo);
         formData.append('descripcion', descripcion);
         formData.append('categoria', categoria);
+        formData.append('plaza_id', plazaId);
         formData.append('imagen', imagen);
 
         const result = await onSubmit(formData);
@@ -66,6 +102,7 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
             setTitulo('');
             setDescripcion('');
             setCategoria('basura');
+            setPlazaId('');
             setImagen(null);
             setPreviewUrl(null);
             setSubmitted(false);
@@ -89,18 +126,48 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8 transition-all duration-300">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-2xl font-bold mb-1">Reportar una alerta</h2>
             <p className="text-gray-600 mb-6">Ayuda a mejorar nuestras plazas reportando problemas</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Plaza Selector */}
+                <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                        Plaza <span className="text-red-500">*</span>
+                    </label>
+                    {loadingPlazas ? (
+                        <div className="flex items-center justify-center py-4">
+                            <Spinner />
+                            <span className="ml-2 text-gray-500">Cargando plazas...</span>
+                        </div>
+                    ) : (
+                        <select
+                            value={plazaId}
+                            onChange={(e) => setPlazaId(e.target.value)}
+                            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all duration-200 ${
+                                submitted && !isPlazaValid
+                                    ? 'border-red-500 focus:ring-2 focus:ring-red-300'
+                                    : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200'
+                            }`}
+                        >
+                            <option value="">Selecciona una plaza</option>
+                            {plazas.map((plaza) => (
+                                <option key={plaza.id} value={plaza.id}>
+                                    {plaza.nombre} - {plaza.municipio_nombre || 'Sin municipio'}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    {submitted && !isPlazaValid && (
+                        <p className="text-red-500 text-sm mt-1">Debes seleccionar una plaza</p>
+                    )}
+                </div>
+
                 {/* Categoría */}
                 <div>
-                    <label className="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
-                        Tipo de alerta
-                        {submitted && (
-                            <span className="text-red-500 text-sm animate-pulse">(requerido)</span>
-                        )}
+                    <label className="block text-gray-700 font-semibold mb-2">
+                        Tipo de alerta <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {categorias.map((cat) => (
@@ -123,11 +190,8 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
 
                 {/* Título */}
                 <div>
-                    <label className="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
-                        Título
-                        {submitted && !isTituloValid && (
-                            <span className="text-red-500 text-sm animate-pulse">(requerido)</span>
-                        )}
+                    <label className="block text-gray-700 font-semibold mb-2">
+                        Título <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
@@ -140,18 +204,18 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
                                 ? 'border-red-500 focus:ring-2 focus:ring-red-300'
                                 : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200'
                         } ${isSubmitting ? 'opacity-60 cursor-not-allowed bg-gray-50' : 'bg-white'}`}
-                        placeholder="Ej: Basura en la entrada"
+                        placeholder="Ej: Basura acumulada en la entrada"
                     />
                     <p className="text-xs text-gray-500 mt-1">{titulo.length}/100</p>
+                    {submitted && !isTituloValid && (
+                        <p className="text-red-500 text-sm mt-1">El título debe tener al menos 5 caracteres</p>
+                    )}
                 </div>
 
                 {/* Descripción */}
                 <div>
-                    <label className="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
-                        Descripción
-                        {submitted && !isDescripcionValid && (
-                            <span className="text-red-500 text-sm animate-pulse">(requerido)</span>
-                        )}
+                    <label className="block text-gray-700 font-semibold mb-2">
+                        Descripción <span className="text-red-500">*</span>
                     </label>
                     <textarea
                         value={descripcion}
@@ -164,18 +228,18 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
                                 : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200'
                         } ${isSubmitting ? 'opacity-60 cursor-not-allowed bg-gray-50' : 'bg-white'}`}
                         rows="4"
-                        placeholder="Describe el problema con detalles..."
+                        placeholder="Describe el problema con detalles (mínimo 10 caracteres)..."
                     />
                     <p className="text-xs text-gray-500 mt-1">{descripcion.length}/500</p>
+                    {submitted && !isDescripcionValid && (
+                        <p className="text-red-500 text-sm mt-1">La descripción debe tener al menos 10 caracteres</p>
+                    )}
                 </div>
 
                 {/* Imagen Upload */}
                 <div>
-                    <label className="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
-                        📸 Foto del problema
-                        {submitted && !isImageValid && (
-                            <span className="text-red-500 text-sm animate-pulse">(requerido)</span>
-                        )}
+                    <label className="block text-gray-700 font-semibold mb-2">
+                        📸 Foto del problema <span className="text-red-500">*</span>
                     </label>
 
                     {previewUrl ? (
@@ -218,6 +282,9 @@ export const AlertForm = ({ usuario, onSubmit, isSubmitting }) => {
                                 className="hidden"
                             />
                         </label>
+                    )}
+                    {submitted && !isImageValid && (
+                        <p className="text-red-500 text-sm mt-1">Debes subir una foto como evidencia</p>
                     )}
                 </div>
 

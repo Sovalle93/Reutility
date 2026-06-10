@@ -14,6 +14,7 @@ import { FiscalizadorPanel } from './modules/alertas/pages/FiscalizadorPanel';
 import { RegisterPage } from './modules/auth/pages/RegisterPage';
 import { AdminPanel } from './modules/admin/pages/AdminPanel';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { NuevaAlertaPage } from './modules/alertas/pages/NuevaAlertaPage';
 
 const RutaProtegida = ({ children, allowedRoles = [] }) => {
     const { usuario, loading } = useAuth();
@@ -51,6 +52,11 @@ function App() {
                         <PerfilPage />
                     </RutaProtegida>
                 } />
+
+                <Route path="/alertas/nueva" element={
+                <RutaProtegida>
+                    <NuevaAlertaPage />
+                </RutaProtegida>} />
 
                 {/* Panel Fiscalizador - solo fiscalizador, municipal_worker y admin */}
                 <Route path="/fiscalizador" element={

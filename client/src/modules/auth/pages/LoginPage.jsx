@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { validateLogin, validateRegister } from '../../../schemas/userSchema';
 
 export const LoginPage = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -20,6 +21,18 @@ export const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        const validation = isLogin
+            ? validateLogin({ email, password })
+            : validateRegister({ email, password, nombre });
+
+        if (!validation.success) {
+            const message = validation.error.errors[0].message;
+            setError(message);
+            toast.error(message);
+            return;
+        }
+
         setLoading(true);
 
         let result;

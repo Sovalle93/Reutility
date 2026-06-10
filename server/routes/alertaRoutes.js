@@ -5,6 +5,8 @@ const { setMunicipioContext } = require('../middleware/municipio');
 const alertController = require('../controllers/alertController');
 const multer = require('multer');
 const path = require('path');
+const { validate } = require('../middleware/validate');
+const { validateAlerta } = require('../schemas/alertaSchema');
 
 // Configuración de multer para imágenes
 const storage = multer.diskStorage({
@@ -36,7 +38,7 @@ router.get('/alertas', alertController.getAlertas);
 router.get('/alertas/:id', alertController.getAlertaById);
 
 // Rutas protegidas
-router.post('/alertas', protegerRuta, upload.single('imagen'), alertController.createAlerta);
+router.post('/alertas', protegerRuta, upload.single('imagen'), validate(validateAlerta, 'body'), alertController.createAlerta);
 router.put('/alertas/:id/status', protegerRuta, setMunicipioContext, alertController.updateAlertaStatus);
 router.get('/mis-alertas', protegerRuta, alertController.getMisAlertas);
 

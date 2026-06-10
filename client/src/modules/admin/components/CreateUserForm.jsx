@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { ROLE_OPTIONS, requiresMunicipio, validateUserForm, getPasswordStrength } from '../utils/adminHelpers';
+import toast from 'react-hot-toast';
+import { ROLE_OPTIONS, requiresMunicipio, getPasswordStrength } from '../utils/adminHelpers';
+import { validateAdminCreateUser } from '../../../schemas/userSchema';
 
 const INITIAL = { nombre: '', email: '', password: '', rol: 'fiscalizador', municipio_id: '' };
 
@@ -24,8 +26,16 @@ export const CreateUserForm = ({ municipios, onSubmit, isCreating }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const { valid, errors: formErrors } = validateUserForm(form);
-        if (!valid) { setErrors(formErrors); return; }
+        const result = validateAdminCreateUser(form);
+        if (!result.success) {
+            const fieldErrors = {};
+            result.error.errors.forEach(err => {
+                if (err.path.length > 0) fieldErrors[err.path[0]] = err.message;
+            });
+            setErrors(fieldErrors);
+            toast.error(result.error.errors[0].message);
+            return;
+        }
         setErrors({});
         onSubmit(form, () => setForm(INITIAL));
     };

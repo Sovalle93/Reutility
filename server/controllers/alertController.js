@@ -67,20 +67,13 @@ const getAlertaById = async (req, res, next) => {
 // ===== CREATE ALERTA =====
 const createAlerta = async (req, res, next) => {
     try {
-        const { titulo, descripcion, categoria, plaza_id } = req.body;
+        const { titulo, descripcion, categoria, plaza_id } = req.body; // ✅ Ya validado
         const usuarioId = req.usuario.id;
         const imagenUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-        if (!titulo || !descripcion || !categoria) {
-            return res.status(400).json({ error: 'Faltan campos requeridos' });
-        }
-
+        // ✅ Solo queda lógica de negocio
         if (!imagenUrl) {
             return res.status(400).json({ error: 'La imagen es requerida' });
-        }
-
-        if (!plaza_id) {
-            return res.status(400).json({ error: 'Debes seleccionar una plaza' });
         }
 
         const result = await pool.query(`

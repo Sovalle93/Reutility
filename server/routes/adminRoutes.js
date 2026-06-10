@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { protegerRuta, verificarRol } = require('../middleware/auth');
+const { validate } = require('../middleware/validate');
+const { validateAdminCreateUser } = require('../schemas/userSchema');
 const { hashPassword } = require('../utils/auth');
 const pool = require('../config/db');
 
@@ -18,7 +20,7 @@ router.get('/admin/usuarios', protegerRuta, verificarRol(['admin']), async (req,
     }
 });
 
-router.post('/admin/usuarios', protegerRuta, verificarRol(['admin']), async (req, res, next) => {
+router.post('/admin/usuarios', protegerRuta, verificarRol(['admin']), validate(validateAdminCreateUser), async (req, res, next) => {
     try {
         const { email, nombre, password, rol, municipio_id } = req.body;
 

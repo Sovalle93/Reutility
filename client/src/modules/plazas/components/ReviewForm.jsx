@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { validateReview } from '../../../schemas/reviewSchema';
 import toast from 'react-hot-toast';
 
 const Spinner = () => (
@@ -42,7 +43,13 @@ export const ReviewForm = ({ usuario, existingReview, onSubmit, isSubmitting }) 
         e.preventDefault();
         setSubmitted(true);
         
-        if (!isFormValid) return;
+        const validation = validateReview({ rating, comentario });
+            if (!validation.success) {
+                // Tomar el primer error
+                const firstError = validation.error.errors[0]?.message || 'Datos inválidos';
+                toast.error(firstError);
+                return;
+            }
         
         onSubmit(rating, comentario);
     };

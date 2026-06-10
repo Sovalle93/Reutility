@@ -68,15 +68,15 @@ const getReviewsByPlaza = async (req, res, next) => {
 const createReview = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { rating, comentario } = req.body;
-        const usuario_id = req.usuario.id;
-
+        const { rating, comentario } = req.body;  // ✅ Ya validado por Zod
+        
+        // ✅ Solo lógica de negocio
         const result = await pool.query(
             `INSERT INTO reviews (plaza_id, usuario_id, rating, comentario) 
              VALUES ($1, $2, $3, $4) RETURNING *`,
-            [id, usuario_id, rating, comentario]
+            [id, req.usuario.id, rating, comentario]
         );
-
+        
         await pool.query(
             `UPDATE plazas 
              SET rating_promedio = (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE plaza_id = $1),
@@ -84,13 +84,12 @@ const createReview = async (req, res, next) => {
              WHERE id = $1`,
             [id]
         );
-
+        
         res.json(result.rows[0]);
     } catch (error) {
-        next(error);
+        next(error);  // ← Usar next, no res.status
     }
 };
-
 
 const getRanking = async (req, res, next) => {
     try {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { validateRegister } from '../../../schemas/userSchema';
 
 export const RegisterPage = () => {
     const [nombre, setNombre] = useState('');
@@ -14,17 +15,18 @@ export const RegisterPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (password !== confirmPassword) {
             toast.error('Las contraseñas no coinciden');
             return;
         }
-        
-        if (password.length < 8) {
-            toast.error('La contraseña debe tener al menos 8 caracteres');
+
+        const validation = validateRegister({ email, password, nombre });
+        if (!validation.success) {
+            toast.error(validation.error.errors[0].message);
             return;
         }
-        
+
         setLoading(true);
         const result = await registrar(email, password, nombre);
         setLoading(false);
