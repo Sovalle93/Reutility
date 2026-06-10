@@ -12,6 +12,8 @@ import { AlertDetailPage } from './modules/alertas/pages/AlertDetailPage';
 import { RankingPage } from './modules/plazas/pages/RankingPage';
 import { FiscalizadorPanel } from './modules/alertas/pages/FiscalizadorPanel';
 import { RegisterPage } from './modules/auth/pages/RegisterPage';
+import { AdminPanel } from './modules/admin/pages/AdminPanel';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 const RutaProtegida = ({ children, allowedRoles = [] }) => {
     const { usuario, loading } = useAuth();
@@ -57,8 +59,15 @@ function App() {
                     </RutaProtegida>
                 } />
                 
+                {/* Panel Admin - solo admin */}
+                <Route path="/admin" element={
+                    <RutaProtegida allowedRoles={['admin']}>
+                        <AdminPanel />
+                    </RutaProtegida>
+                } />
+
                 {/* Redirección por defecto */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </Layout>
     );
