@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 // ===== MIS REVIEWS =====
-const getMisReviews = async (req, res) => {
+const getMisReviews = async (req, res, next) => {
     try {
         const usuario_id = req.usuario.id;
         const result = await pool.query(
@@ -14,13 +14,12 @@ const getMisReviews = async (req, res) => {
         );
         res.json(result.rows);
     } catch (error) {
-        console.error('Error en getMisReviews:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
 // ===== USER REVIEW FOR A PLAZA =====
-const getUserReview = async (req, res) => {
+const getUserReview = async (req, res, next) => {
     try {
         const { id } = req.params;
         const usuario_id = req.usuario.id;
@@ -30,13 +29,12 @@ const getUserReview = async (req, res) => {
         );
         res.json(result.rows[0] || null);
     } catch (error) {
-        console.error('Error en getUserReview:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
 // ===== UPDATE REVIEW =====
-const updateReview = async (req, res) => {
+const updateReview = async (req, res, next) => {
     try {
         const { reviewId } = req.params;
         const { rating, comentario } = req.body;
@@ -66,13 +64,12 @@ const updateReview = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error en updateReview:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
 // ===== DELETE REVIEW =====
-const deleteReview = async (req, res) => {
+const deleteReview = async (req, res, next) => {
     try {
         const { reviewId } = req.params;
         const usuario_id = req.usuario.id;
@@ -100,13 +97,12 @@ const deleteReview = async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error('Error en deleteReview:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
 // ===== MIS ALERTAS =====
-const getMisAlertas = async (req, res) => {
+const getMisAlertas = async (req, res, next) => {
     try {
         const usuario_id = req.usuario.id;
         
@@ -122,8 +118,7 @@ const getMisAlertas = async (req, res) => {
         
         res.json(result.rows);
     } catch (error) {
-        console.error('Error en getMisAlertas:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 

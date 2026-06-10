@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-const getPlazas = async (req, res) => {
+const getPlazas = async (req, res, next) => {
     try {
         const { municipio_id } = req.query;
         let query = `SELECT p.*, m.nombre as municipio_nombre FROM plazas p 
@@ -17,11 +17,11 @@ const getPlazas = async (req, res) => {
         const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
-const getPlazaById = async (req, res) => {
+const getPlazaById = async (req, res, next) => {
     try {
         const { id } = req.params;
         
@@ -44,12 +44,11 @@ const getPlazaById = async (req, res) => {
         
         res.json(plaza);
     } catch (error) {
-        console.error('Error en getPlazaById:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
-const getReviewsByPlaza = async (req, res) => {
+const getReviewsByPlaza = async (req, res, next) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
@@ -62,11 +61,11 @@ const getReviewsByPlaza = async (req, res) => {
         );
         res.json(result.rows);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
-const createReview = async (req, res) => {
+const createReview = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { rating, comentario } = req.body;
@@ -88,12 +87,12 @@ const createReview = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
 
-const getRanking = async (req, res) => {
+const getRanking = async (req, res, next) => {
     try {
         const { municipio_id, limit = 10 } = req.query;
         let query = `
@@ -158,8 +157,7 @@ const getRanking = async (req, res) => {
         }
         
     } catch (error) {
-        console.error('Error en getRanking:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 

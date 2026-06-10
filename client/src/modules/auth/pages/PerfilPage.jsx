@@ -1,78 +1,25 @@
+import { useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { useState, useEffect } from 'react';
-import { getMisReviews, getMisAlertas } from '../../../services/api';
 import { Link } from 'react-router-dom';
+import { usePerfilData } from '../hooks/usePerfilData';
+
+const ESTADO_BADGES = {
+    'pendiente':  { color: 'bg-yellow-100 text-yellow-800', label: '⏳ Pendiente' },
+    'en_revision': { color: 'bg-blue-100 text-blue-800', label: '🔍 En revisión' },
+    'en_progreso': { color: 'bg-purple-100 text-purple-800', label: '🚧 En progreso' },
+    'resuelto':   { color: 'bg-green-100 text-green-800', label: '✅ Resuelto' },
+    'rechazado':  { color: 'bg-red-100 text-red-800', label: '❌ Rechazado' },
+};
+
+const CATEGORIA_ICONS = {
+    basura: '🗑️', mantenimiento: '🔧', vandalismo: '🎨',
+    seguridad: '👮', iluminacion: '💡', otro: '📝',
+};
 
 export const PerfilPage = () => {
     const { usuario, logout } = useAuth();
-    const [misReviews, setMisReviews] = useState([]);
-    const [misAlertas, setMisAlertas] = useState([]);
-    const [loadingReviews, setLoadingReviews] = useState(true);
-    const [loadingAlertas, setLoadingAlertas] = useState(true);
     const [activeTab, setActiveTab] = useState('reviews');
-
-    useEffect(() => {
-        const fetchMisReviews = async () => {
-            if (!usuario) {
-                setLoadingReviews(false);
-                return;
-            }
-            
-            try {
-                const data = await getMisReviews();
-                setMisReviews(data);
-            } catch (error) {
-                console.error('Error cargando comentarios:', error);
-            } finally {
-                setLoadingReviews(false);
-            }
-        };
-        
-        fetchMisReviews();
-    }, [usuario]);
-
-    useEffect(() => {
-        const fetchMisAlertas = async () => {
-            if (!usuario) {
-                setLoadingAlertas(false);
-                return;
-            }
-            
-            try {
-                const data = await getMisAlertas();
-                setMisAlertas(data);
-            } catch (error) {
-                console.error('Error cargando alertas:', error);
-            } finally {
-                setLoadingAlertas(false);
-            }
-        };
-        
-        fetchMisAlertas();
-    }, [usuario]);
-
-    const getEstadoBadge = (estado) => {
-        const estados = {
-            'pendiente': { color: 'bg-yellow-100 text-yellow-800', label: '⏳ Pendiente' },
-            'en_revision': { color: 'bg-blue-100 text-blue-800', label: '🔍 En revisión' },
-            'en_progreso': { color: 'bg-purple-100 text-purple-800', label: '🚧 En progreso' },
-            'resuelto': { color: 'bg-green-100 text-green-800', label: '✅ Resuelto' },
-            'rechazado': { color: 'bg-red-100 text-red-800', label: '❌ Rechazado' }
-        };
-        return estados[estado] || { color: 'bg-gray-100 text-gray-800', label: estado };
-    };
-
-    const getCategoriaIcon = (categoria) => {
-        const iconos = {
-            'basura': '🗑️',
-            'mantenimiento': '🔧',
-            'vandalismo': '🎨',
-            'seguridad': '👮',
-            'iluminacion': '💡',
-            'otro': '📝'
-        };
-        return iconos[categoria] || '⚠️';
-    };
+    const { misReviews, misAlertas, loadingReviews, loadingAlertas } = usePerfilData(usuario);
 
     if (!usuario) {
         return (
@@ -84,7 +31,6 @@ export const PerfilPage = () => {
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
-            {/* Información del usuario */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -107,33 +53,28 @@ export const PerfilPage = () => {
                 </div>
             </div>
 
-            {/* Tabs */}
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
                 <div className="flex border-b border-gray-200">
-                    <button
-                        onClick={() => setActiveTab('reviews')}
-                        className={`flex-1 px-6 py-3 text-center font-semibold transition-all duration-200 ${
-                            activeTab === 'reviews'
-                                ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50'
-                                : 'text-gray-500 hover:text-emerald-500'
-                        }`}
-                    >
-                        📝 Mis Comentarios ({misReviews.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('alertas')}
-                        className={`flex-1 px-6 py-3 text-center font-semibold transition-all duration-200 ${
-                            activeTab === 'alertas'
-                                ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50'
-                                : 'text-gray-500 hover:text-emerald-500'
-                        }`}
-                    >
-                        ⚠️ Mis Alertas ({misAlertas.length})
-                    </button>
+                    {[
+                        { key: 'reviews', label: `📝 Mis Comentarios (${misReviews.length})` },
+                        { key: 'alertas', label: `⚠️ Mis Alertas (${misAlertas.length})` },
+                    ].map(({ key, label }) => (
+                        <button
+                            key={key}
+                            onClick={() => setActiveTab(key)}
+                            className={`flex-1 px-6 py-3 text-center font-semibold transition-all duration-200 ${
+                                activeTab === key
+                                    ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50'
+                                    : 'text-gray-500 hover:text-emerald-500'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
 
-                {/* Panel de Comentarios */}
-                <div className={`p-6 transition-all duration-300 ${activeTab === 'reviews' ? 'block' : 'hidden'}`}>
+                {/* Reviews tab */}
+                <div className={`p-6 ${activeTab === 'reviews' ? 'block' : 'hidden'}`}>
                     <h2 className="text-xl font-bold mb-4">Mis comentarios</h2>
                     {loadingReviews ? (
                         <p className="text-gray-500 text-center py-8">Cargando...</p>
@@ -155,18 +96,14 @@ export const PerfilPage = () => {
                                         <span className="text-sm text-gray-600">Calificación:</span>
                                         <div className="flex">
                                             {[...Array(5)].map((_, i) => (
-                                                <span key={i} className={`text-sm ${i < review.rating ? 'text-emerald-500' : 'text-gray-300'}`}>
-                                                    ★
-                                                </span>
+                                                <span key={i} className={`text-sm ${i < review.rating ? 'text-emerald-500' : 'text-gray-300'}`}>★</span>
                                             ))}
                                         </div>
                                     </div>
                                     <p className="text-gray-700 text-sm mt-1">{review.comentario}</p>
                                     <p className="text-xs text-gray-400 mt-2">
                                         {new Date(review.created_at).toLocaleDateString('es-CL', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
+                                            year: 'numeric', month: 'long', day: 'numeric'
                                         })}
                                     </p>
                                 </div>
@@ -175,8 +112,8 @@ export const PerfilPage = () => {
                     )}
                 </div>
 
-                {/* Panel de Alertas */}
-                <div className={`p-6 transition-all duration-300 ${activeTab === 'alertas' ? 'block' : 'hidden'}`}>
+                {/* Alertas tab */}
+                <div className={`p-6 ${activeTab === 'alertas' ? 'block' : 'hidden'}`}>
                     <h2 className="text-xl font-bold mb-4">Mis alertas reportadas</h2>
                     {loadingAlertas ? (
                         <p className="text-gray-500 text-center py-8">Cargando...</p>
@@ -190,13 +127,13 @@ export const PerfilPage = () => {
                     ) : (
                         <div className="space-y-4">
                             {misAlertas.map((alerta) => {
-                                const estado = getEstadoBadge(alerta.estado);
+                                const estado = ESTADO_BADGES[alerta.estado] ?? { color: 'bg-gray-100 text-gray-800', label: alerta.estado };
                                 return (
                                     <div key={alerta.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                                         <div className="flex flex-col md:flex-row justify-between gap-3">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-xl">{getCategoriaIcon(alerta.categoria)}</span>
+                                                    <span className="text-xl">{CATEGORIA_ICONS[alerta.categoria] ?? '⚠️'}</span>
                                                     <h3 className="font-semibold text-gray-800">{alerta.titulo}</h3>
                                                 </div>
                                                 <p className="text-gray-600 text-sm mb-2">{alerta.descripcion}</p>
@@ -215,9 +152,9 @@ export const PerfilPage = () => {
                                                     {estado.label}
                                                 </span>
                                                 {alerta.foto_url && (
-                                                    <a 
-                                                        href={alerta.foto_url} 
-                                                        target="_blank" 
+                                                    <a
+                                                        href={alerta.foto_url}
+                                                        target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-blue-500 text-xs hover:underline"
                                                     >

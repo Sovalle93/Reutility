@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 // ===== GET ALL ALERTAS =====
-const getAlertas = async (req, res) => {
+const getAlertas = async (req, res, next) => {
     try {
         const { status } = req.query;
         const { rol, municipio_id } = req.municipioContext || {};
@@ -35,13 +35,12 @@ const getAlertas = async (req, res) => {
         const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
-        console.error('Error al obtener alertas:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
 // ===== GET ALERTA BY ID =====
-const getAlertaById = async (req, res) => {
+const getAlertaById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const result = await pool.query(`
@@ -61,13 +60,12 @@ const getAlertaById = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error al obtener alerta:', error);
-        res.status(500).json({ error: 'Error al obtener alerta' });
+        next(error);
     }
 };
 
 // ===== CREATE ALERTA =====
-const createAlerta = async (req, res) => {
+const createAlerta = async (req, res, next) => {
     try {
         const { titulo, descripcion, categoria, plaza_id } = req.body;
         const usuarioId = req.usuario.id;
@@ -93,13 +91,12 @@ const createAlerta = async (req, res) => {
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
-        console.error('Error al crear alerta:', error);
-        res.status(500).json({ error: 'Error al crear alerta' });
+        next(error);
     }
 };
 
 // ===== UPDATE ALERTA STATUS =====
-const updateAlertaStatus = async (req, res) => {
+const updateAlertaStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { status, notas } = req.body;
@@ -141,13 +138,12 @@ const updateAlertaStatus = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error al actualizar alerta:', error);
-        res.status(500).json({ error: 'Error al actualizar alerta' });
+        next(error);
     }
 };
 
 // ===== GET MIS ALERTAS =====
-const getMisAlertas = async (req, res) => {
+const getMisAlertas = async (req, res, next) => {
     try {
         const usuarioId = req.usuario.id;
 
@@ -166,8 +162,7 @@ const getMisAlertas = async (req, res) => {
 
         res.json(result.rows);
     } catch (error) {
-        console.error('Error al obtener mis alertas:', error);
-        res.status(500).json({ error: 'Error al obtener mis alertas' });
+        next(error);
     }
 };
 

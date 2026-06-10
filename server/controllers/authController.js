@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const { hashPassword, verifyPassword, generateToken } = require('../utils/auth');
 
-const registrar = async (req, res) => {
+const registrar = async (req, res, next) => {
     try {
         const { email, password, nombre } = req.body;
 
@@ -30,11 +30,11 @@ const registrar = async (req, res) => {
 
         res.json({ success: true, usuario });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -92,8 +92,7 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error en login:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        next(error);
     }
 };
 
@@ -102,7 +101,7 @@ const logout = (req, res) => {
     res.json({ success: true });
 };
 
-const obtenerPerfil = async (req, res) => {
+const obtenerPerfil = async (req, res, next) => {
     try {
         const token = req.cookies.token;
         if (!token) {
@@ -130,7 +129,7 @@ const obtenerPerfil = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 };
 

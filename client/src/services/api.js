@@ -159,3 +159,53 @@ export const getMisAlertas = async () => {
 
     return res.json();
 };
+
+// ===== ADMIN API =====
+export const getAdminUsuarios = async () => {
+    const res = await fetch(`${API_URL}/admin/usuarios`, { credentials: 'include' });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Error al obtener usuarios');
+    }
+    return res.json();
+};
+
+export const createAdminUsuario = async (userData) => {
+    const res = await fetch(`${API_URL}/admin/usuarios`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(userData),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Error al crear usuario');
+    }
+    return res.json();
+};
+
+export const updateAdminUsuario = async (userId, data) => {
+    const res = await fetch(`${API_URL}/admin/usuarios/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Error al actualizar usuario');
+    }
+    return res.json();
+};
+
+export const deleteAdminUsuario = async (userId) => {
+    const res = await fetch(`${API_URL}/admin/usuarios/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Error al eliminar usuario');
+    }
+    return res.json();
+};

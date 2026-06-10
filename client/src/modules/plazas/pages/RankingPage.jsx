@@ -1,43 +1,13 @@
-import { useState, useEffect } from 'react';
-import { getRanking, getMunicipios } from '../../../services/api';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useRanking } from '../hooks/useRanking';
 
 export const RankingPage = () => {
-    const [ranking, setRanking] = useState([]);
-    const [estadisticas, setEstadisticas] = useState(null);
-    const [municipios, setMunicipios] = useState([]);
     const [selectedMunicipio, setSelectedMunicipio] = useState('');
-    const [loading, setLoading] = useState(true);
     const [hoveredCard, setHoveredCard] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchMunicipios = async () => {
-            try {
-                const data = await getMunicipios();
-                setMunicipios(data);
-            } catch (error) {
-                console.error('Error cargando municipios:', error);
-            }
-        };
-        fetchMunicipios();
-    }, []);
-
-    useEffect(() => {
-        const fetchRanking = async () => {
-            setLoading(true);
-            try {
-                const data = await getRanking(selectedMunicipio || null, 20);
-                setRanking(data.ranking || []);
-                setEstadisticas(data.estadisticas);
-            } catch (error) {
-                console.error('Error cargando ranking:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchRanking();
-    }, [selectedMunicipio]);
+    const { ranking, estadisticas, municipios, isLoading } = useRanking(selectedMunicipio, 20);
 
     const getMedallaColor = (posicion) => {
         switch(posicion) {
@@ -50,7 +20,6 @@ export const RankingPage = () => {
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
-            {/* Header */}
             <div className="text-center mb-12">
                 <h1 className="text-4xl font-bold text-emerald-800 mb-3 flex items-center justify-center gap-2">
                     🏆 Ranking de Plazas
@@ -60,7 +29,6 @@ export const RankingPage = () => {
                 </p>
             </div>
 
-            {/* Filtro y estadísticas */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-8">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-3 w-full md:w-auto">
@@ -76,7 +44,7 @@ export const RankingPage = () => {
                             ))}
                         </select>
                     </div>
-                    
+
                     {estadisticas && (
                         <div className="flex gap-6 text-sm">
                             <div className="text-center">
@@ -92,8 +60,7 @@ export const RankingPage = () => {
                 </div>
             </div>
 
-            {/* Loading */}
-            {loading && (
+            {isLoading && (
                 <div className="flex justify-center items-center py-20">
                     <div className="animate-pulse text-center">
                         <div className="text-4xl mb-2">🏆</div>
@@ -102,15 +69,14 @@ export const RankingPage = () => {
                 </div>
             )}
 
-            {/* Ranking List */}
-            {!loading && ranking.length === 0 && (
+            {!isLoading && ranking.length === 0 && (
                 <div className="text-center py-20 bg-white rounded-xl shadow-md">
                     <div className="text-6xl mb-4">📭</div>
                     <p className="text-gray-500 text-lg">No hay plazas registradas en este municipio</p>
                 </div>
             )}
 
-            {!loading && ranking.length > 0 && (
+            {!isLoading && ranking.length > 0 && (
                 <div className="space-y-4">
                     {ranking.map((plaza) => (
                         <div
@@ -122,7 +88,6 @@ export const RankingPage = () => {
                             onClick={() => navigate(`/plazas/${plaza.id}`)}
                         >
                             <div className="flex items-center p-4 md:p-6">
-                                {/* Posición */}
                                 <div className="flex-shrink-0 w-16 md:w-20 text-center">
                                     {plaza.medalla ? (
                                         <div className="text-3xl md:text-4xl animate-bounce">
@@ -135,7 +100,6 @@ export const RankingPage = () => {
                                     )}
                                 </div>
 
-                                {/* Información principal */}
                                 <div className="flex-1 ml-4 md:ml-6">
                                     <h3 className="text-lg md:text-xl font-bold text-gray-800 group-hover:text-emerald-700 transition-colors">
                                         {plaza.nombre}
@@ -154,7 +118,6 @@ export const RankingPage = () => {
                                     </p>
                                 </div>
 
-                                {/* Rating */}
                                 <div className="flex-shrink-0 text-right ml-4">
                                     <div className="flex items-center gap-1 bg-emerald-50 px-3 py-2 rounded-lg">
                                         <span className="text-2xl text-emerald-500">★</span>
@@ -167,7 +130,6 @@ export const RankingPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Flecha */}
                                 <div className="flex-shrink-0 ml-4 text-gray-400 group-hover:text-emerald-500 transition-colors">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -179,8 +141,7 @@ export const RankingPage = () => {
                 </div>
             )}
 
-            {/* Footer con animación */}
-            {!loading && ranking.length > 0 && (
+            {!isLoading && ranking.length > 0 && (
                 <div className="text-center mt-8 text-sm text-gray-400 animate-pulse">
                     🏆 Basado en {ranking.reduce((acc, p) => acc + p.total_reviews, 0)} reseñas de la comunidad
                 </div>

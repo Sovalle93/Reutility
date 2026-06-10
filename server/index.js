@@ -12,6 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const alertaRoutes = require('./routes/alertaRoutes');
 const municipioRoutes = require('./routes/municipioRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const { errorHandler } = require('./middleware/errorHandler');
 
 // Configuraciones
 require('./config/passport');
@@ -38,6 +39,8 @@ app.use('/api', plazaRoutes);
 app.use('/api', userRoutes);
 app.use('/api', alertaRoutes);
 app.use('/api', adminRoutes);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);

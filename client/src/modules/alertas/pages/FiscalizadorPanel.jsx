@@ -1,47 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { getAlertas, updateAlertaStatus } from '../../../services/api';
 import { AlertaCard } from '../components/AlertaCard';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAlertasGestion } from '../hooks/useAlertasGestion';
 
 export const FiscalizadorPanel = () => {
     const { usuario, logout } = useAuth();
     const navigate = useNavigate();
-    const [alertas, setAlertas] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('todas');
-    const [updatingId, setUpdatingId] = useState(null);
-
-    useEffect(() => {
-        const fetchAlertas = async () => {
-            try {
-                const data = await getAlertas();
-                setAlertas(data);
-            } catch (error) {
-                console.error('Error:', error);
-                toast.error('Error al cargar alertas');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAlertas();
-    }, []);
-
-    const handleStatusChange = async (alertaId, nuevoEstado) => {
-        setUpdatingId(alertaId);
-        try {
-            await updateAlertaStatus(alertaId, nuevoEstado);
-            setAlertas(prev => prev.map(a => 
-                a.id === alertaId ? { ...a, estado: nuevoEstado } : a
-            ));
-            toast.success(`Alerta actualizada a: ${nuevoEstado}`);
-        } catch (error) {
-            toast.error('Error al actualizar');
-        } finally {
-            setUpdatingId(null);
-        }
-    };
+    const { alertas, isLoading, handleStatusChange, updatingId } = useAlertasGestion();
 
     const handleLogout = async () => {
         await logout();
@@ -49,16 +17,15 @@ export const FiscalizadorPanel = () => {
         navigate('/login');
     };
 
-    const alertasFiltradas = alertas.filter(alerta => {
-        if (filter === 'todas') return true;
-        return alerta.estado === filter;
-    });
+    const alertasFiltradas = alertas.filter(alerta =>
+        filter === 'todas' ? true : alerta.estado === filter
+    );
 
     const estadisticas = {
         total: alertas.length,
         pendiente: alertas.filter(a => a.estado === 'pendiente').length,
         en_progreso: alertas.filter(a => a.estado === 'en_progreso').length,
-        resuelto: alertas.filter(a => a.estado === 'resuelto').length
+        resuelto: alertas.filter(a => a.estado === 'resuelto').length,
     };
 
     if (!usuario || (usuario.rol !== 'fiscalizador' && usuario.rol !== 'admin' && usuario.rol !== 'municipal_worker')) {
@@ -71,7 +38,6 @@ export const FiscalizadorPanel = () => {
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
-            {/* Header con botón de logout */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-emerald-800 mb-2">
@@ -81,7 +47,11 @@ export const FiscalizadorPanel = () => {
                         Gestiona y actualiza el estado de las alertas ciudadanas
                     </p>
                     <div className="mt-2 text-sm text-gray-500">
-                        👤 {usuario.nombre} • {usuario.rol === 'fiscalizador' ? 'Fiscalizador' : usuario.rol === 'municipal_worker' ? 'Trabajador Municipal' : 'Administrador'}
+                        👤 {usuario.nombre} • {
+                            usuario.rol === 'fiscalizador' ? 'Fiscalizador'
+                            : usuario.rol === 'municipal_worker' ? 'Trabajador Municipal'
+                            : 'Administrador'
+                        }
                     </div>
                 </div>
                 <button
@@ -95,7 +65,6 @@ export const FiscalizadorPanel = () => {
                 </button>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white rounded-lg shadow p-4 text-center">
                     <div className="text-2xl font-bold text-gray-800">{estadisticas.total}</div>
@@ -115,54 +84,30 @@ export const FiscalizadorPanel = () => {
                 </div>
             </div>
 
-            {/* Filtros */}
             <div className="bg-white rounded-lg shadow p-4 mb-6">
                 <div className="flex flex-wrap gap-2">
-                    <button
-                        onClick={() => setFilter('todas')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                            filter === 'todas' 
-                                ? 'bg-emerald-600 text-white' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        Todas
-                    </button>
-                    <button
-                        onClick={() => setFilter('pendiente')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                            filter === 'pendiente' 
-                                ? 'bg-yellow-500 text-white' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        ⏳ Pendientes
-                    </button>
-                    <button
-                        onClick={() => setFilter('en_progreso')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                            filter === 'en_progreso' 
-                                ? 'bg-purple-500 text-white' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        🚧 En progreso
-                    </button>
-                    <button
-                        onClick={() => setFilter('resuelto')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                            filter === 'resuelto' 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        ✅ Resueltas
-                    </button>
+                    {[
+                        { value: 'todas', label: 'Todas', active: 'bg-emerald-600' },
+                        { value: 'pendiente', label: '⏳ Pendientes', active: 'bg-yellow-500' },
+                        { value: 'en_progreso', label: '🚧 En progreso', active: 'bg-purple-500' },
+                        { value: 'resuelto', label: '✅ Resueltas', active: 'bg-green-500' },
+                    ].map(({ value, label, active }) => (
+                        <button
+                            key={value}
+                            onClick={() => setFilter(value)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                                filter === value
+                                    ? `${active} text-white`
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Lista de alertas */}
-            {loading ? (
+            {isLoading ? (
                 <div className="text-center py-12">
                     <div className="animate-pulse">Cargando alertas...</div>
                 </div>
